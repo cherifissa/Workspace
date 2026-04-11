@@ -1,0 +1,30 @@
+# OS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+
+# Java / Maven
+java-project/target/
+*.class
+
+# C++ / CMake
+cpp-project/build/
+cpp-project/CMakeFiles/
+cpp-project/CMakeCache.txt
+cpp-project/Makefile
+cpp-project/cmake_install.cmake
+cpp-project/compile_commands.json
+
+# VS Code local generated files
+.vscode/*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Archives / temp
+*.zip
+*.tmp
+*.swp

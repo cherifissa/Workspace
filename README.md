@@ -64,13 +64,29 @@ mvn -f java-project/pom.xml -q exec:java
 Prerequis:
 
 - `cmake`
-- `ninja`
 - `VCPKG_ROOT` configure
+- `protoc` en version `libprotoc 29.3`
+
+Si `VCPKG_ROOT` n'est pas defini, la configuration CMake echoue avec un chemin invalide vers le toolchain (`/scripts/buildsystems/vcpkg.cmake`).
+
+Exemple (a adapter selon votre machine):
+
+```bash
+export VCPKG_ROOT="$HOME/vcpkg"
+```
+
+Verification rapide des prerequis TP:
+
+```bash
+./check_prerequis_tp.sh
+```
+
+Si le script indique des erreurs, corriger avant de lancer le build C++.
 
 Configuration:
 
 ```bash
-cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 ```
 
 Build:
@@ -85,6 +101,13 @@ Run:
 ./cpp-project/build/cpp_interop
 ```
 
+Si `cmake --build` echoue, verifier d'abord:
+
+```bash
+echo "$VCPKG_ROOT"
+test -f "$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" && echo OK || echo KO
+```
+
 ## Execution via boutons VS Code
 
 Le dossier `.vscode/` contient:
@@ -93,6 +116,16 @@ Le dossier `.vscode/` contient:
 - `launch.json`: lancement Java et C++
 
 Utiliser ces configurations pour rester conforme a la correction en TP.
+
+Note: la tache C++ utilise `bash` (et non `zsh`) pour rester compatible Linux en salle TP.
+
+Configuration valide testee localement:
+
+```bash
+export VCPKG_ROOT="/Users/koydo/Projets/vcpkg"
+cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build cpp-project/build -j
+```
 
 ## Remise Moodle
 

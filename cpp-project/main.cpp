@@ -44,15 +44,17 @@ int main()
     JNIEnv *env = nullptr;
 
     JavaVMInitArgs args;
-    JavaVMOption options[2];
+    JavaVMOption options[3];
 
     const std::string classpathOpt = "-Djava.class.path=" + findJarPath();
     const std::string libPathOpt = "-Djava.library.path=" + findLibraryPath();
+    const std::string nativeAccessOpt = "--enable-native-access=ALL-UNNAMED";
 
     args.version = JNI_VERSION_1_8;
-    args.nOptions = 2;
+    args.nOptions = 3;
     options[0].optionString = const_cast<char *>(classpathOpt.c_str());
     options[1].optionString = const_cast<char *>(libPathOpt.c_str());
+    options[2].optionString = const_cast<char *>(nativeAccessOpt.c_str());
     args.options = options;
     args.ignoreUnrecognized = JNI_FALSE;
 

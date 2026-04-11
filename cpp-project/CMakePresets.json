@@ -8,8 +8,7 @@
   "configurePresets": [
     {
       "name": "default",
-      "displayName": "Default (vcpkg)",
-      "generator": "Ninja",
+      "displayName": "Default (vcpkg, requires VCPKG_ROOT)",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",

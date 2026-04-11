@@ -32,13 +32,10 @@
     {
       "label": "cpp: configure",
       "type": "shell",
-      "command": "cmake",
+      "command": "bash",
       "args": [
-        "-S",
-        "cpp-project",
-        "-B",
-        "cpp-project/build",
-        "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "-lc",
+        "if [[ -z \"${VCPKG_ROOT:-}\" ]]; then echo 'ERROR: VCPKG_ROOT is not set'; echo 'Set it, e.g. export VCPKG_ROOT=~/vcpkg'; exit 1; fi; cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake\""
       ],
       "problemMatcher": []
     },
