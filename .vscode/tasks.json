@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "java: package",
+      "type": "shell",
+      "command": "mvn",
+      "args": [
+        "-f",
+        "java-project/pom.xml",
+        "clean",
+        "package"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "java: run",
+      "type": "shell",
+      "command": "mvn",
+      "args": [
+        "-f",
+        "java-project/pom.xml",
+        "-q",
+        "exec:java"
+      ],
+      "dependsOn": [
+        "java: package"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp: configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S",
+        "cpp-project",
+        "-B",
+        "cpp-project/build",
+        "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp: build",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "cpp-project/build",
+        "-j"
+      ],
+      "dependsOn": [
+        "cpp: configure",
+        "java: package"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp: run",
+      "type": "shell",
+      "command": "./cpp-project/build/cpp_interop",
+      "dependsOn": [
+        "cpp: build"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

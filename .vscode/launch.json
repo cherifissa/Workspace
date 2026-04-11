@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Java: Main",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "com.project.Main",
+      "projectName": "java-project",
+      "cwd": "${workspaceFolder}/java-project"
+    },
+    {
+      "name": "C++: cpp_interop",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/cpp-project/build/cpp_interop",
+      "args": [],
+      "cwd": "${workspaceFolder}/cpp-project/build",
+      "MIMode": "gdb",
+      "preLaunchTask": "cpp: build",
+      "externalConsole": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Java then C++",
+      "configurations": [
+        "Java: Main",
+        "C++: cpp_interop"
+      ]
+    }
+  ]
+}

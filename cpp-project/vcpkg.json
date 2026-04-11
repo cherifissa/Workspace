@@ -1,0 +1,5 @@
+{
+  "name": "interop-cpp-project",
+  "version-string": "1.0.0",
+  "dependencies": ["range-v3"]
+}
