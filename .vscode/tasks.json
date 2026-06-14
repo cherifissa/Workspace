@@ -1,68 +1,54 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "java: package",
-      "type": "shell",
-      "command": "mvn",
-      "args": [
-        "-f",
-        "java-project/pom.xml",
-        "clean",
-        "package"
-      ],
-      "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "java: run",
-      "type": "shell",
-      "command": "mvn",
-      "args": [
-        "-f",
-        "java-project/pom.xml",
-        "-q",
-        "exec:java"
-      ],
-      "dependsOn": [
-        "java: package"
-      ],
-      "problemMatcher": []
-    },
-    {
-      "label": "cpp: configure",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-lc",
-        "if [[ -z \"${VCPKG_ROOT:-}\" ]]; then echo 'ERROR: VCPKG_ROOT is not set'; echo 'Set it, e.g. export VCPKG_ROOT=~/vcpkg'; exit 1; fi; cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake\""
-      ],
-      "problemMatcher": []
-    },
-    {
-      "label": "cpp: build",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "cpp-project/build",
-        "-j"
-      ],
-      "dependsOn": [
-        "cpp: configure",
-        "java: package"
-      ],
-      "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "cpp: run",
-      "type": "shell",
-      "command": "./cpp-project/build/cpp_interop",
-      "dependsOn": [
-        "cpp: build"
-      ],
-      "problemMatcher": []
-    }
-  ]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "java: package",
+            "type": "shell",
+            "command": "mvn",
+            "args": [
+                "-f",
+                "java-project/pom.xml",
+                "clean",
+                "package"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "cpp: configure",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "if [ -z \"${VCPKG_ROOT:-}\" ]; then if [ -d \"$HOME/vcpkg\" ]; then VCPKG_ROOT=\"$HOME/vcpkg\"; elif [ -d \"$HOME/Projets/vcpkg\" ]; then VCPKG_ROOT=\"$HOME/Projets/vcpkg\"; else echo 'ERROR: vcpkg introuvable. Definissez VCPKG_ROOT.'; exit 1; fi; fi; cmake -S cpp-project -B cpp-project/build -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake\""
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "cpp: build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "cpp-project/build",
+                "-j"
+            ],
+            "dependsOn": [
+                "cpp: configure",
+                "java: package"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always"
+            }
+        }
+    ]
 }

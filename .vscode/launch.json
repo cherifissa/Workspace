@@ -2,32 +2,26 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Java: Main",
+      "name": "Java: Questions 2 + 3",
       "type": "java",
       "request": "launch",
       "mainClass": "com.project.Main",
       "projectName": "java-project",
-      "cwd": "${workspaceFolder}/java-project"
+      "cwd": "${workspaceFolder}/java-project",
+      "vmArgs": "-Djava.library.path=${workspaceFolder}/cpp-project/build --enable-native-access=ALL-UNNAMED",
+      "console": "integratedTerminal",
+      "preLaunchTask": "cpp: build"
     },
     {
-      "name": "C++: cpp_interop",
-      "type": "cppdbg",
+      "name": "Java: Question 4 (C++)",
+      "type": "java",
       "request": "launch",
-      "program": "${workspaceFolder}/cpp-project/build/cpp_interop",
-      "args": [],
-      "cwd": "${workspaceFolder}/cpp-project/build",
-      "MIMode": "gdb",
-      "preLaunchTask": "cpp: build",
-      "externalConsole": false
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Run Java then C++",
-      "configurations": [
-        "Java: Main",
-        "C++: cpp_interop"
-      ]
+      "mainClass": "com.project.MainCpp",
+      "projectName": "java-project",
+      "cwd": "${workspaceFolder}/java-project",
+      "vmArgs": "-Djava.library.path=${workspaceFolder}/cpp-project/build --enable-native-access=ALL-UNNAMED",
+      "console": "integratedTerminal",
+      "preLaunchTask": "cpp: build"
     }
   ]
 }

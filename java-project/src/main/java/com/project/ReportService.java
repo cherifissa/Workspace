@@ -1,157 +1,104 @@
 package com.project;
 
-import com.project.proto.FilterRequestOuterClass;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 import java.util.Locale;
+
 
 public final class ReportService {
 
-    private ReportService() {
-    }
+    public static boolean USE_CPP_ECARTTYPE = false;
+
+    private ReportService() {}
 
     public static void afficherMoyenneJava() throws Exception {
-        try (Connection conn = H2Database.createAndInitConnection()) {
-            registerJavaAverage(conn);
-            executeAndPrint(conn, false, null);
-        }
-    }
-
-    public static void afficherMoyenneEtEcartTypeJava() throws Exception {
-        try (Connection conn = H2Database.createAndInitConnection()) {
-            registerJavaAndPython(conn);
-            executeAndPrint(conn, true, null);
+        try (Connection conn = Database.connect()) {
+            enregistrer(conn, false);
+            afficher(conn, false);
         }
     }
 
     public static void afficherMoyenneEtEcartType() throws Exception {
-        try (Connection conn = H2Database.createAndInitConnection()) {
-            registerNative(conn);
-            executeAndPrint(conn, true, null);
+        try (Connection conn = Database.connect()) {
+            enregistrer(conn, true);
+            afficher(conn, true);
         }
     }
 
-    public static void afficherMoyenneEtEcartType2(FilterRequestOuterClass.FilterRequest request) throws Exception {
-        try (Connection conn = H2Database.createAndInitConnection()) {
-            registerNative(conn);
-            executeAndPrint(conn, true, request);
+    private static void enregistrer(Connection conn, boolean avecEcart) throws Exception {
+        try (Statement s = conn.createStatement()) {
+            s.execute("DROP AGGREGATE IF EXISTS MOYENNE");
+            s.execute("CREATE AGGREGATE MOYENNE FOR \"com.project.udf.MoyenneAggregate\"");
+            if (avecEcart) {
+                s.execute("DROP AGGREGATE IF EXISTS ECARTTYPE");
+                String impl = USE_CPP_ECARTTYPE
+                    ? "com.project.udf.NativeEcartTypeAggregate"
+                    : "com.project.udf.EcartTypePythonAggregate";
+                s.execute("CREATE AGGREGATE ECARTTYPE FOR \"" + impl + "\"");
+            }
         }
     }
 
-    private static void registerJavaAverage(Connection conn) throws Exception {
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP AGGREGATE IF EXISTS MOYENNE");
-            stmt.execute("CREATE AGGREGATE MOYENNE FOR \"com.project.udf.MoyenneAggregate\"");
-        }
-    }
+    private static void afficher(Connection conn, boolean avecEcart) throws Exception {
+        String ecart = avecEcart ? ",\n  ECARTTYPE(ot.order_total) AS ecarttype" : "";
+        String sql =
+            "WITH order_totals AS (\n" +
+            "  SELECT o.Customer_ID AS customer_id, o.Order_ID AS order_id,\n" +
+            "    SUM(\n" +
+            "      CAST(od.QUANTITY AS DOUBLE)\n" +
+            "      * CAST(REPLACE(od.Unit_Price, ',', '.') AS DOUBLE)\n" +
+            "      * (1.0 - CAST(REPLACE(COALESCE(od.DISCOUNT, '0'), ',', '.') AS DOUBLE))\n" +
+            "    ) AS order_total\n" +
+            "  FROM \"ORDER\" o JOIN ORDERDETAILS od ON od.Order_ID = o.Order_ID\n" +
+            "  GROUP BY o.Customer_ID, o.Order_ID\n" +
+            ")\n" +
+            "SELECT c.First_Name AS client, MOYENNE(ot.order_total) AS moyenne" + ecart + "\n" +
+            "FROM CUSTOMER c JOIN order_totals ot ON ot.customer_id = c.ID\n" +
+            "GROUP BY c.First_Name ORDER BY c.First_Name";
 
-    private static void registerJavaAndPython(Connection conn) throws Exception {
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP AGGREGATE IF EXISTS MOYENNE");
-            stmt.execute("DROP AGGREGATE IF EXISTS ECARTTYPE");
-            stmt.execute("CREATE AGGREGATE MOYENNE FOR \"com.project.udf.MoyenneAggregate\"");
-            stmt.execute("CREATE AGGREGATE ECARTTYPE FOR \"com.project.udf.EcartTypePythonAggregate\"");
-        }
-    }
+        List<String> headers = new ArrayList<>(List.of("CLIENT", "MOYENNE"));
+        if (avecEcart) headers.add("ECARTTYPE");
 
-    private static void registerNative(Connection conn) throws Exception {
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP AGGREGATE IF EXISTS MOYENNE");
-            stmt.execute("DROP AGGREGATE IF EXISTS ECARTTYPE");
-            stmt.execute("CREATE AGGREGATE MOYENNE FOR \"com.project.udf.NativeMoyenneAggregate\"");
-            stmt.execute("CREATE AGGREGATE ECARTTYPE FOR \"com.project.udf.NativeEcartTypeAggregate\"");
-        }
-    }
-
-    private static void executeAndPrint(Connection conn, boolean includeStdDev, FilterRequestOuterClass.FilterRequest filter) throws Exception {
         List<List<String>> rows = new ArrayList<>();
-
-        StringBuilder sql = new StringBuilder();
-        sql.append("WITH order_totals AS (\n");
-        sql.append("  SELECT\n");
-        sql.append("    o.\"Customer ID\" AS customer_id,\n");
-        sql.append("    o.\"Order ID\" AS order_id,\n");
-        sql.append("    SUM(\n");
-        sql.append("      CAST(od.\"QUANTITY\" AS DOUBLE)\n");
-        sql.append("      * CAST(REPLACE(od.\"Unit Price\", ',', '.') AS DOUBLE)\n");
-        sql.append("      * (1.0 - CAST(REPLACE(COALESCE(od.\"DISCOUNT\", '0'), ',', '.') AS DOUBLE))\n");
-        sql.append("    ) AS order_total\n");
-        sql.append("  FROM \"ORDER\" o\n");
-        sql.append("  JOIN ORDERDETAILS od ON od.\"Order ID\" = o.\"Order ID\"\n");
-        sql.append("  GROUP BY o.\"Customer ID\", o.\"Order ID\"\n");
-        sql.append(")\n");
-        sql.append("SELECT\n");
-        sql.append("  c.\"First Name\" AS client,\n");
-        sql.append("  MOYENNE(ot.order_total) AS moyenne");
-        if (includeStdDev) {
-            sql.append(",\n  ECARTTYPE(ot.order_total) AS ecarttype\n");
-        } else {
-            sql.append("\n");
-        }
-        sql.append("FROM CUSTOMER c\n");
-        sql.append("JOIN order_totals ot ON ot.customer_id = c.ID\n");
-
-        List<Object> params = new ArrayList<>();
-        if (filter != null && filter.getCustomersCount() > 0) {
-            sql.append("WHERE c.\"First Name\" IN (");
-            for (int i = 0; i < filter.getCustomersCount(); i++) {
-                if (i > 0) {
-                    sql.append(", ");
-                }
-                sql.append("?");
-                params.add(filter.getCustomers(i));
-            }
-            sql.append(")\n");
-        }
-
-        sql.append("GROUP BY c.\"First Name\"\n");
-
-        if (filter != null) {
-            sql.append("HAVING MOYENNE(ot.order_total) >= ?\n");
-            params.add(filter.getMinTotal());
-        }
-
-        sql.append("ORDER BY c.\"First Name\"");
-
-        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                Object p = params.get(i);
-                if (p instanceof String s) {
-                    ps.setString(i + 1, s);
-                } else if (p instanceof Number n) {
-                    ps.setDouble(i + 1, n.doubleValue());
-                }
-            }
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    List<String> row = new ArrayList<>();
-                    row.add(rs.getString("client"));
-                    row.add(formatDouble(rs.getDouble("moyenne")));
-                    if (includeStdDev) {
-                        row.add(formatDouble(rs.getDouble("ecarttype")));
-                    }
-                    rows.add(row);
-                }
+        try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                List<String> row = new ArrayList<>();
+                row.add(rs.getString("client"));
+                row.add(String.format(Locale.US, "%.2f", rs.getDouble("moyenne")));
+                if (avecEcart) row.add(String.format(Locale.US, "%.2f", rs.getDouble("ecarttype")));
+                rows.add(row);
             }
         }
 
-        List<String> headers = new ArrayList<>();
-        headers.add("CLIENT");
-        headers.add("MOYENNE");
-        if (includeStdDev) {
-            headers.add("ECARTTYPE");
-        }
-
-        TablePrinter.print(headers, rows);
+        afficherTableau(headers, rows);
     }
 
-    private static String formatDouble(double value) {
-        return String.format(Locale.US, "%.2f", value);
+    private static void afficherTableau(List<String> headers, List<List<String>> rows) {
+        int[] w = new int[headers.size()];
+        for (int i = 0; i < headers.size(); i++) {
+            w[i] = headers.get(i).length();
+            for (List<String> row : rows)
+                w[i] = Math.max(w[i], row.get(i).length());
+        }
+
+        String sep = separateur(w);
+        System.out.println(sep);
+        System.out.println(ligne(headers, w));
+        System.out.println(sep);
+        for (List<String> row : rows) System.out.println(ligne(row, w));
+        System.out.println(sep);
+    }
+
+    private static String separateur(int[] w) {
+        StringBuilder sb = new StringBuilder("+");
+        for (int wi : w) sb.append("-".repeat(wi + 2)).append("+");
+        return sb.toString();
+    }
+
+    private static String ligne(List<String> cells, int[] w) {
+        StringBuilder sb = new StringBuilder("|");
+        for (int i = 0; i < cells.size(); i++)
+            sb.append(String.format(" %-" + w[i] + "s |", cells.get(i)));
+        return sb.toString();
     }
 }

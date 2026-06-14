@@ -9,7 +9,7 @@ public final class NativeStats {
     private NativeStats() {
     }
 
-    public static native double moyenneNative(double[] values);
-
     public static native double ecartTypeNative(double[] values);
+
+    public static native double ecartTypeNumpy(double[] values);
 }

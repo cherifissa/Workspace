@@ -1,6 +1,5 @@
 package com.project.udf;
 
-import com.project.StatsFunctions;
 import org.h2.api.AggregateFunction;
 
 import java.sql.Connection;
@@ -12,26 +11,19 @@ public class MoyenneAggregate implements AggregateFunction {
 
     private final List<Double> values = new ArrayList<>();
 
-    @Override
-    public void init(Connection connection) {
-        values.clear();
-    }
-
-    @Override
-    public int getType(int[] inputTypes) {
-        return Types.DOUBLE;
-    }
+    @Override public void init(Connection c) { values.clear(); }
+    @Override public int getType(int[] t)    { return Types.DOUBLE; }
 
     @Override
     public void add(Object value) {
-        if (value == null) {
-            return;
-        }
-        values.add(((Number) value).doubleValue());
+        if (value != null) values.add(((Number) value).doubleValue());
     }
 
     @Override
     public Object getResult() {
-        return StatsFunctions.moyenne(values);
+        if (values.isEmpty()) return null;
+        double sum = 0;
+        for (double v : values) sum += v;
+        return sum / values.size();
     }
 }

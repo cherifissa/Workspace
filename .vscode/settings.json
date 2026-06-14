@@ -1,0 +1,22 @@
+{
+  "cmake.configureOnOpen": true,
+  "cmake.sourceDirectory": "${workspaceFolder}/cpp-project",
+  "cmake.buildDirectory": "${workspaceFolder}/cpp-project/build",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/cpp-project/build/compile_commands.json",
+  "[java]": {
+    "editor.formatOnSave": true
+  },
+  "[cpp]": {
+    "editor.formatOnSave": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/build": false,
+    "**/target": false
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/target": true,
+    "**/.git": true
+  }
+}
